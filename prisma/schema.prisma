@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String        @unique
+  name          String
+  role          String        // ADMIN, DISPATCHER, TECHNICIAN, SUBCONTRACTOR
+  phone         String?
+  company       String?
+  isActive      Boolean       @default(true)
+  password      String
+  interventions Intervention[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Client {
+  id            String         @id @default(cuid())
+  company       String
+  name          String
+  email         String        @unique
+  phone         String
+  address       String
+  city          String
+  postalCode    String
+  interventions Intervention[]
+  projects      Project[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Intervention {
+  id              String    @id @default(cuid())
+  title           String
+  description     String
+  date            String
+  time            String
+  status          String    // pending, in_progress, completed
+  location        String    // JSON { address, city, postalCode, latitude, longitude }
+  clientId        String
+  client          Client    @relation(fields: [clientId], references: [id])
+  siteName        String
+  phone           String
+  technicianId    String?
+  technician      User?     @relation(fields: [technicianId], references: [id])
+  buyPrice        Float?
+  sellPrice       Float?
+  isSubcontracted Boolean   @default(false)
+  invoiceStatus   String?   // pending, submitted, paid
+  invoiceNumber   String?
+  projectId       String?
+  project         Project?  @relation(fields: [projectId], references: [id])
+  serviceId       String?
+  service         Service?  @relation(fields: [serviceId], references: [id])
+  trackingNumbers String?   // JSON array of strings
+  attachments     String?   // JSON array of strings
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Project {
+  id            String         @id @default(cuid())
+  name          String
+  description   String?
+  clientId      String
+  client        Client        @relation(fields: [clientId], references: [id])
+  startDate     DateTime
+  endDate       DateTime?
+  status        String        // PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
+  interventions Intervention[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Service {
+  id            String         @id @default(cuid())
+  name          String
+  description   String?
+  price         Float
+  unit          String        // HOUR, DAY, UNIT
+  interventions Intervention[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model AdminDocument {
+  id          String   @id @default(cuid())
+  type        String
+  name        String
+  expiryDate  DateTime
+  file        String?
+  status      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  period        String
+  invoiceNumber String   @unique
+  amount        Float
+  status        String
+  dueDate       DateTime
+  attachment    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
